@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>門市 EOW 日報</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one working column; top bar switches 店長填寫 / 後台, back office uses dense scannable tables */
+:root{
+  --bg:#f3f5f3; --surface:#ffffff; --sunk:#eaeeeb; --ink:#1b2421; --muted:#5f6b66; --line:#d8dfdb;
+  --accent:#1f6b58; --accent-ink:#ffffff; --accent-soft:#dcebe5;
+  --ok:#23804f; --ok-bg:#dff1e6; --late:#a86400; --late-bg:#fbebcf; --miss:#b3302b; --miss-bg:#f7dcda;
+  --off:#6c7570; --off-bg:#e6e9e7; --wait:#2b5fa8; --wait-bg:#dde8f7;
+  --f-body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1a2220; --sunk:#222c29; --ink:#e6ece9; --muted:#9aa7a1; --line:#2f3b37;
+  --accent:#5cc0a2; --accent-ink:#0d1a16; --accent-soft:#1f3a32;
+  --ok:#6fd39b; --ok-bg:#183527; --late:#f0b860; --late-bg:#3a2c12; --miss:#f08a84; --miss-bg:#3d1d1b;
+  --off:#9aa39e; --off-bg:#262e2b; --wait:#8db6f0; --wait-bg:#1b2a40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1a2220; --sunk:#222c29; --ink:#e6ece9; --muted:#9aa7a1; --line:#2f3b37;
+  --accent:#5cc0a2; --accent-ink:#0d1a16; --accent-soft:#1f3a32;
+  --ok:#6fd39b; --ok-bg:#183527; --late:#f0b860; --late-bg:#3a2c12; --miss:#f08a84; --miss-bg:#3d1d1b;
+  --off:#9aa39e; --off-bg:#262e2b; --wait:#8db6f0; --wait-bg:#1b2a40; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-size:20px;margin:0;font-weight:700;letter-spacing:.02em}
+h2{font-size:17px;margin:0;font-weight:700;text-wrap:balance}
+h3{font-size:14px;margin:0;font-weight:700;color:var(--accent);letter-spacing:.06em}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand small{color:var(--muted);font-size:13px}
+.seg{display:inline-flex;background:var(--sunk);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input[type=number],input[type=date],input[type=month],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;box-sizing:border-box;color:var(--ink)}
+textarea{min-height:90px;resize:vertical;line-height:1.6}
+input[type=number]{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn:disabled{opacity:.5;cursor:default}
+.calc{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.calc b{font-family:var(--f-num);font-size:18px;color:var(--ink);font-weight:500;padding:6px 0}
+.sec{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:16px}
+.sec:first-child{border-top:0;padding-top:0}
+.qsc{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.note{font-size:13px;color:var(--muted)}
+.banner{border-radius:var(--r);padding:10px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:14px}
+.banner.warn{background:var(--late-bg);color:var(--late)}
+.banner.info{background:var(--accent-soft);color:var(--ink)}
+.banner.err{background:var(--miss-bg);color:var(--miss)}
+.pill{display:inline-block;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.s-ok{background:var(--ok-bg);color:var(--ok)} .s-late{background:var(--late-bg);color:var(--late)}
+.s-miss{background:var(--miss-bg);color:var(--miss)} .s-off{background:var(--off-bg);color:var(--off)}
+.s-wait{background:var(--wait-bg);color:var(--wait)} .s-none{background:transparent;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;align-items:baseline;gap:8px;border-radius:var(--r);padding:8px 14px}
+.chip b{font-family:var(--f-num);font-size:20px;font-weight:500}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-weight:500;color:var(--muted);background:var(--sunk);font-size:12.5px;position:sticky;top:0}
+td.l,th.l{text-align:left}
+td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
+tr.total td{font-weight:700;background:var(--sunk)}
+tr.detail td{white-space:normal;text-align:left;background:var(--bg)}
+.dgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.dgrid div{min-width:0} .dgrid h4{margin:0 0 4px;font-size:12px;color:var(--accent);letter-spacing:.05em}
+.dgrid p{margin:0;white-space:pre-wrap;word-break:break-word;font-size:13.5px}
+.mx td,.mx th{padding:4px 3px;text-align:center;min-width:26px}
+.mx td.l,.mx th.l{text-align:left;padding-left:10px;position:sticky;left:0;background:var(--surface);z-index:1}
+.mx th.l{background:var(--sunk);z-index:2}
+.cell{display:inline-flex;width:24px;height:24px;border-radius:5px;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:0;padding:0;cursor:pointer}
+.cell.s-none{border:1px dashed var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--muted);align-items:center}
+.wk{color:var(--muted);font-weight:400}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;z-index:20}
+.hist{display:flex;flex-wrap:wrap;gap:4px}
+@media (max-width:560px){.panel{padding:12px}th,td{padding:7px 8px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>門市 EOW 日報</h1><small id="who"></small></div>
+    <nav class="seg" id="modeNav" hidden>
+      <button data-mode="store" aria-pressed="true">店長填寫</button>
+      <button data-mode="day">單日總覽</button>
+      <button data-mode="month">整月統計</button>
+      <button data-mode="sched">班表</button>
+    </nav>
+  </header>
+  <div id="connBanner" class="banner info" style="margin-bottom:16px" hidden></div>
+
+  <!-- 後台登入 -->
+  <section id="v-login" class="stack" hidden>
+    <form class="panel stack" id="loginForm" style="max-width:360px">
+      <h2>後台登入</h2>
+      <label class="f">管理密碼<input type="password" id="pw" autocomplete="current-password" style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px"></label>
+      <div class="row"><button class="btn primary" type="submit" id="loginBtn">登入</button><span class="note" id="loginMsg"></span></div>
+    </form>
+  </section>
+
+  <!-- 店長填寫 -->
+  <section id="v-store" class="stack">
+    <div class="panel row">
+      <label class="f" style="flex:1 1 180px">門市<select id="fStore"></select></label>
+      <label class="f" style="flex:1 1 160px">營業日期<input type="date" id="fDate"></label>
+      <div class="note" style="flex:2 1 260px" id="fDeadline"></div>
+    </div>
+    <div id="fBanner"></div>
+    <form id="form" class="panel stack" autocomplete="off">
+      <div class="sec">
+        <h3>SALES 營業額</h3>
+        <div class="grid">
+          <label class="f">預計業績<input type="number" id="target" min="0" inputmode="numeric"></label>
+          <label class="f">本日業績 *<input type="number" id="sales" min="0" inputmode="numeric" required></label>
+          <div class="calc">業績達成率<b id="cSales">—</b></div>
+          <label class="f">預計杯數<input type="number" id="cupTarget" min="0" inputmode="numeric"></label>
+          <label class="f">本日杯數 *<input type="number" id="cups" min="0" inputmode="numeric" required></label>
+          <div class="calc">杯數達成率<b id="cCups">—</b></div>
+          <label class="f">自外送筆數<input type="number" id="delivOrders" min="0" inputmode="numeric"></label>
+          <label class="f">自外送杯數<input type="number" id="delivCups" min="0" inputmode="numeric"></label>
+        </div>
+        <label class="f">本日狀況 *<textarea id="daily" required placeholder="今天的來客、天氣、活動、外送、突發狀況…"></textarea></label>
+        <label class="f">業績規劃（明日／下週）<textarea id="planSales" style="min-height:60px"></textarea></label>
+      </div>
+      <div class="sec">
+        <h3>QSC 品質・服務・衛生</h3>
+        <div class="qsc">
+          <label class="f">Q 品質<textarea id="q"></textarea></label>
+          <label class="f">S 服務<textarea id="s"></textarea></label>
+          <label class="f">C 衛生<textarea id="c"></textarea></label>
+        </div>
+        <label class="f">QSC 規劃<textarea id="planQsc" style="min-height:60px" placeholder="例：完成週清"></textarea></label>
+      </div>
+      <div class="sec">
+        <h3>人員狀況・訓練・操作改善</h3>
+        <div class="grid">
+          <label class="f">原定工時<input type="number" id="hoursPlan" min="0" step="0.5" inputmode="decimal"></label>
+          <label class="f">實際工時<input type="number" id="hoursActual" min="0" step="0.5" inputmode="decimal"></label>
+          <div class="calc">產值（杯／工時）<b id="cProd">—</b></div>
+        </div>
+        <label class="f">人員狀況<textarea id="staff"></textarea></label>
+        <label class="f">人員規劃<textarea id="planStaff" style="min-height:60px"></textarea></label>
+      </div>
+      <div class="sec">
+        <h3>商圈調查</h3>
+        <label class="f">商圈狀況<textarea id="area" placeholder="周邊競品、活動、人潮變化…"></textarea></label>
+        <label class="f">商圈規劃<textarea id="planArea" style="min-height:60px"></textarea></label>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <span class="note" id="fSaved"></span>
+        <button class="btn primary" type="submit" id="fSubmit">送出日報</button>
+      </div>
+    </form>
+    <div class="panel stack">
+      <h2 id="histTitle">本月繳交紀錄</h2>
+      <div class="hist" id="hist"></div>
+      <div class="legend" id="legend1"></div>
+    </div>
+  </section>
+
+  <!-- 單日 -->
+  <section id="v-day" class="stack" hidden>
+    <div class="panel row" style="justify-content:space-between">
+      <div class="row">
+        <label class="f">日期<input type="date" id="dDate"></label>
+        <button class="btn" id="dPrev" type="button">前一天</button>
+        <button class="btn" id="dNext" type="button">後一天</button>
+      </div>
+      <div class="row"><button class="btn" type="button" data-refresh>重新整理</button><button class="btn primary" id="dExport" type="button">下載當日 Excel</button></div>
+    </div>
+    <div class="chips" id="dChips"></div>
+    <div class="tbl"><table id="dTable"></table></div>
+    <p class="note">點任一門市列可展開完整內容。截止時間：營業日隔天 12:00。</p>
+  </section>
+
+  <!-- 整月 -->
+  <section id="v-month" class="stack" hidden>
+    <div class="panel row" style="justify-content:space-between">
+      <label class="f">月份<input type="month" id="mMonth"></label>
+      <div class="row"><button class="btn" type="button" data-refresh>重新整理</button><button class="btn primary" id="mExport" type="button">下載整月 Excel</button></div>
+    </div>
+    <div class="tbl"><table id="mTable"></table></div>
+    <p class="note">應交 = 非休假且已過截止（或已交）的天數。繳交率 = 已交 ÷ 應交；遲交率 = 遲交 ÷ 應交；未交率 = 未交 ÷ 應交。</p>
+    <h2>每日繳交狀況</h2>
+    <div class="legend" id="legend2"></div>
+    <div class="tbl"><table class="mx" id="mMatrix"></table></div>
+    <p class="note">點格子可跳到該日總覽。</p>
+  </section>
+
+  <!-- 班表 -->
+  <section id="v-sched" class="stack" hidden>
+    <div class="panel row" style="justify-content:space-between">
+      <label class="f">月份<input type="month" id="sMonth"></label>
+      <span class="note">點格子切換「休」，也可以直接在 Google 試算表的「班表」工作表貼上。店長休假當天不需繳交，不列入繳交率。</span>
+    </div>
+    <div class="tbl"><table class="mx" id="sMatrix"></table></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ====== 把 Google Apps Script 部署後的網址貼在這裡 ====== */
+const API_URL = "請貼上你的 Apps Script 網址";
+/* ===================================================== */
+
+const STORES=["林口長庚","士林捷運","中山南西","站前南陽","忠孝敦化","台北大巨蛋","信義永吉","信義虎林","宜蘭羅東","宜蘭礁溪"];
+const NUMF=["target","sales","cupTarget","cups","delivOrders","delivCups","hoursPlan","hoursActual"];
+const TXTF=["daily","planSales","q","s","c","planQsc","staff","planStaff","area","planArea"];
+const ST={ok:["準時","s-ok"],late:["遲交","s-late"],miss:["未交","s-miss"],off:["休假","s-off"],wait:["待交","s-wait"],none:["—","s-none"]};
+const WD="日一二三四五六";
+const $=id=>document.getElementById(id);
+const S={admin:false,pw:null,mode:"store",ym:null,store:null,reports:{},off:{},openRow:null,saving:false,loadSeq:0};
+
+/* ---------- dates (Asia/Taipei) ---------- */
+const todayTW=()=>new Date(Date.now()+8*3600e3).toISOString().slice(0,10);
+const addDays=(d,n)=>{const t=new Date(d+"T00:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)};
+const deadline=d=>Date.parse(addDays(d,1)+"T12:00:00+08:00");
+const ymOf=d=>d.slice(0,7);
+const monthDays=ym=>{const [y,m]=ym.split("-").map(Number);const n=new Date(Date.UTC(y,m,0)).getUTCDate();return Array.from({length:n},(_,i)=>`${ym}-${String(i+1).padStart(2,"0")}`)};
+const wd=d=>WD[new Date(d+"T00:00:00Z").getUTCDay()];
+const md=d=>`${+d.slice(5,7)}/${+d.slice(8)}`;
+const fmtTime=ms=>{if(!ms)return"";const t=new Date(ms+8*3600e3).toISOString();return `${+t.slice(5,7)}/${+t.slice(8,10)} ${t.slice(11,16)}`};
+
+/* ---------- numbers ---------- */
+const num=v=>(v===null||v===undefined||v==="")?null:Number(v);
+const pct=(a,b)=>(a!=null&&b)?a/b:null;
+const fp=v=>v==null||!isFinite(v)?"—":(v*100).toFixed(1)+"%";
+const fn=v=>v==null?"—":Number(v).toLocaleString("zh-TW");
+const f1=v=>v==null||!isFinite(v)?"—":v.toFixed(1);
+const rid=(d,i)=>`${d}_${i}`;
+
+/* ---------- status ---------- */
+function status(i,d){
+  const r=S.reports[rid(d,i)];
+  if(r){return (r.firstSubmittedAt||0)<=deadline(d)?"ok":"late"}
+  if((S.off[STORES[i]]||[]).includes(d))return"off";
+  if(d>todayTW())return"none";
+  return Date.now()>deadline(d)?"miss":"wait";
+}
+const pill=k=>`<span class="pill ${ST[k][1]}">${ST[k][0]}</span>`;
+function legend(el){el.innerHTML=["ok","late","miss","wait","off"].map(k=>`<span><span class="cell ${ST[k][1]}" style="cursor:default">${ST[k][0][0]}</span> ${ST[k][0]}</span>`).join("")}
+
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2800)}
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function lsGet(k,ss){try{return (ss?sessionStorage:localStorage).getItem(k)}catch(e){return null}}
+function lsSet(k,v,ss){try{(ss?sessionStorage:localStorage).setItem(k,v)}catch(e){}}
+function banner(kind,msg){const b=$("connBanner");if(!kind){b.hidden=true;return}b.hidden=false;b.className="banner "+kind;b.textContent=msg}
+
+/* ---------- API ---------- */
+const apiReady=()=>/^https:\/\/script\.google\.com\//.test(API_URL);
+async function api(body){
+  if(!apiReady())throw new Error("網站還沒設定 Apps Script 網址");
+  const res=await fetch(API_URL,{method:"POST",body:JSON.stringify(body)});
+  const j=await res.json();
+  if(!j.ok)throw new Error(j.error||"伺服器錯誤");
+  return j;
+}
+
+/* ---------- load month ---------- */
+async function load(ym,force){
+  const key=S.admin?"all":String(storeIdx());
+  if(!force&&S.ym===ym&&S.store===key)return;
+  S.ym=ym;S.store=key;S.reports={};S.off={};
+  const seq=++S.loadSeq;
+  banner("info","讀取資料中…");render();
+  try{
+    const j=await api(S.admin?{action:"month",ym,pw:S.pw}:{action:"month",ym,store:storeIdx()});
+    if(seq!==S.loadSeq)return;
+    const m={};j.reports.forEach(r=>m[r.id]=r);S.reports=m;S.off=j.off||{};
+    banner(null);fillForm.key=null;render();
+  }catch(e){if(seq===S.loadSeq)banner("err","讀取失敗："+e.message+"。請檢查網路後按重新整理。")}
+}
+
+/* ---------- mode ---------- */
+function setMode(m){
+  if(!S.admin&&m!=="store")m="store";
+  S.mode=m;
+  document.querySelectorAll("#modeNav button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  ["store","day","month","sched","login"].forEach(k=>$("v-"+k).hidden=k!==m);
+  load(curYm());render();
+}
+function curYm(){const m=S.mode;return m==="store"?ymOf($("fDate").value):m==="day"?ymOf($("dDate").value):m==="month"?$("mMonth").value:$("sMonth").value}
+function render(){
+  if(S.mode==="store")renderStore();
+  else if(S.mode==="day")renderDay();
+  else if(S.mode==="month")renderMonth();
+  else if(S.mode==="sched")renderSched();
+}
+
+/* ---------- store form ---------- */
+function storeIdx(){return +$("fStore").value}
+function fillForm(){
+  const i=storeIdx(),d=$("fDate").value,r=S.reports[rid(d,i)],key=rid(d,i)+"|"+(r?r.updatedAt:"");
+  if(fillForm.key===key)return;
+  fillForm.key=key;
+  NUMF.forEach(f=>$(f).value=r&&r[f]!=null?r[f]:"");
+  TXTF.forEach(f=>$(f).value=r?r[f]||"":"");
+  calc();
+}
+function calc(){
+  const g=f=>num($(f).value);
+  $("cSales").textContent=fp(pct(g("sales"),g("target")));
+  $("cCups").textContent=fp(pct(g("cups"),g("cupTarget")));
+  $("cProd").textContent=f1(pct(g("cups"),g("hoursActual")));
+}
+function renderStore(){
+  const i=storeIdx(),d=$("fDate").value;if(!d)return;
+  const loaded=S.ym===ymOf(d)&&(S.admin||S.store===String(i));
+  if(loaded)fillForm();
+  const r=S.reports[rid(d,i)],dl=deadline(d),late=Date.now()>dl;
+  $("fDeadline").textContent=`截止：${md(addDays(d,1))} 12:00${late&&!r?"（已過截止，送出會記為遲交）":""}`;
+  $("fSaved").textContent=!loaded?"":r?`已於 ${fmtTime(r.firstSubmittedAt)} 首次送出${r.updatedAt&&r.updatedAt!==r.firstSubmittedAt?`，最後修改 ${fmtTime(r.updatedAt)}`:""}・${(r.firstSubmittedAt||0)<=dl?"準時":"遲交"}`:"尚未送出";
+  $("fSubmit").textContent=r?"更新日報":"送出日報";
+  let h="";
+  if((S.off[STORES[i]]||[]).includes(d)&&!r)h+=`<div class="banner info">這天班表排休，不需要填寫。</div>`;
+  const y=addDays(todayTW(),-1);
+  if(loaded&&ymOf(y)===S.ym&&d!==y&&status(i,y)==="wait")h+=`<div class="banner warn"><span>昨天（${md(y)}）的日報還沒交，今天 12:00 截止。</span><button class="btn" type="button" id="goY">去填昨天</button></div>`;
+  $("fBanner").innerHTML=h;
+  const gy=$("goY");if(gy)gy.onclick=()=>{$("fDate").value=y;fillForm.key=null;renderStore()};
+  const ym=ymOf(d);
+  $("histTitle").textContent=`${STORES[i]}・${+ym.slice(5)} 月繳交紀錄`;
+  $("hist").innerHTML=loaded?monthDays(ym).map(x=>{const k=status(i,x);return `<button type="button" class="cell ${ST[k][1]}" title="${md(x)}（${wd(x)}）${ST[k][0]}" data-d="${x}">${+x.slice(8)}</button>`}).join(""):`<span class="note">讀取中…</span>`;
+  $("hist").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("fDate").value=b.dataset.d;onFormChange()});
+}
+function onFormChange(){fillForm.key=null;load(ymOf($("fDate").value));renderStore()}
+async function submitForm(e){
+  e.preventDefault();
+  if(S.saving)return;
+  const i=storeIdx(),d=$("fDate").value;if(!d){toast("請選日期");return}
+  const report={storeIdx:i,date:d};
+  NUMF.forEach(f=>report[f]=num($(f).value));
+  TXTF.forEach(f=>report[f]=$(f).value.trim());
+  const had=!!S.reports[rid(d,i)];
+  S.saving=true;$("fSubmit").disabled=true;$("fSubmit").textContent="送出中…";
+  try{
+    const j=await api({action:"submit",report});
+    if(S.ym===ymOf(d))S.reports[j.report.id]=j.report;
+    fillForm.key=null;toast(had?"已更新":"已送出，辛苦了！");
+  }catch(err){toast("送出失敗："+err.message)}
+  finally{S.saving=false;$("fSubmit").disabled=false;renderStore()}
+}
+
+/* ---------- single day ---------- */
+function renderDay(){
+  const d=$("dDate").value;if(!d)return;
+  const rows=STORES.map((n,i)=>({i,n,k:status(i,d),r:S.reports[rid(d,i)]||{}}));
+  const cnt={ok:0,late:0,miss:0,wait:0,off:0,none:0};rows.forEach(x=>cnt[x.k]++);
+  $("dChips").innerHTML=["ok","late","miss","wait","off"].map(k=>`<div class="chip ${ST[k][1]}">${ST[k][0]}<b>${cnt[k]}</b></div>`).join("");
+  const sum=f=>rows.reduce((a,x)=>a+(x.r[f]||0),0);
+  let h=`<thead><tr><th class="l">門市</th><th class="l">狀態</th><th>預計業績</th><th>本日業績</th><th>達成率</th><th>預計杯數</th><th>本日杯數</th><th>達成率</th><th>外送筆</th><th>外送杯</th><th>原定工時</th><th>實際工時</th><th>產值</th><th class="l">送出時間</th></tr></thead><tbody>`;
+  rows.forEach(({i,n,k,r})=>{
+    const has=!!r.date;
+    h+=`<tr class="${has?"click":""}" data-i="${i}"><td class="l">${n}</td><td class="l">${pill(k)}</td>
+    <td class="n">${fn(r.target)}</td><td class="n">${fn(r.sales)}</td><td class="n">${fp(pct(r.sales,r.target))}</td>
+    <td class="n">${fn(r.cupTarget)}</td><td class="n">${fn(r.cups)}</td><td class="n">${fp(pct(r.cups,r.cupTarget))}</td>
+    <td class="n">${fn(r.delivOrders)}</td><td class="n">${fn(r.delivCups)}</td><td class="n">${f1(r.hoursPlan)}</td><td class="n">${f1(r.hoursActual)}</td>
+    <td class="n">${f1(pct(r.cups,r.hoursActual))}</td><td class="l n">${fmtTime(r.firstSubmittedAt)}</td></tr>`;
+    if(has&&S.openRow===rid(d,i)){
+      const blk=(t,v)=>v?`<div><h4>${t}</h4><p>${esc(v)}</p></div>`:"";
+      h+=`<tr class="detail"><td colspan="14"><div class="dgrid">${blk("本日狀況",r.daily)}${blk("Q 品質",r.q)}${blk("S 服務",r.s)}${blk("C 衛生",r.c)}${blk("人員狀況",r.staff)}${blk("商圈調查",r.area)}${blk("業績規劃",r.planSales)}${blk("QSC 規劃",r.planQsc)}${blk("人員規劃",r.planStaff)}${blk("商圈規劃",r.planArea)}</div></td></tr>`;
+    }
+  });
+  h+=`<tr class="total"><td class="l">合計</td><td></td><td class="n">${fn(sum("target"))}</td><td class="n">${fn(sum("sales"))}</td><td class="n">${fp(pct(sum("sales"),sum("target")))}</td><td class="n">${fn(sum("cupTarget"))}</td><td class="n">${fn(sum("cups"))}</td><td class="n">${fp(pct(sum("cups"),sum("cupTarget")))}</td><td class="n">${fn(sum("delivOrders"))}</td><td class="n">${fn(sum("delivCups"))}</td><td class="n">${f1(sum("hoursPlan"))}</td><td class="n">${f1(sum("hoursActual"))}</td><td class="n">${f1(pct(sum("cups"),sum("hoursActual")))}</td><td></td></tr></tbody>`;
+  $("dTable").innerHTML=h;
+  $("dTable").querySelectorAll("tr.click").forEach(tr=>tr.onclick=()=>{const id=rid(d,tr.dataset.i);S.openRow=S.openRow===id?null:id;renderDay()});
+}
+
+/* ---------- month ---------- */
+const SUMF=["target","sales","cupTarget","cups","delivOrders","delivCups","hoursPlan","hoursActual"];
+function monthStats(){
+  const days=monthDays(S.ym);
+  return STORES.map((n,i)=>{
+    const o={n,due:0,ok:0,late:0,miss:0,off:0};SUMF.forEach(f=>o[f]=0);
+    days.forEach(d=>{const k=status(i,d);if(k==="off")o.off++;if(k==="ok"||k==="late"||k==="miss"){o.due++;o[k]++}
+      const r=S.reports[rid(d,i)];if(r)SUMF.forEach(f=>o[f]+=r[f]||0)});
+    return rates(o)});
+}
+function rates(o){o.sub=o.ok+o.late;o.subRate=pct(o.sub,o.due);o.lateRate=pct(o.late,o.due);o.missRate=pct(o.miss,o.due);
+  o.salesRate=pct(o.sales,o.target);o.cupRate=pct(o.cups,o.cupTarget);o.prod=pct(o.cups,o.hoursActual);return o}
+function totalOf(st){const t={n:"合計"};["due","ok","late","miss","off",...SUMF].forEach(f=>t[f]=st.reduce((a,x)=>a+x[f],0));return rates(t)}
+function pill2(v,kind){if(v==null)return"—";let c;if(kind==="sub"){c=v>=.95?"s-ok":v>=.8?"s-late":"s-miss"}else{c=v===0?"s-ok":v<=.1?"s-late":"s-miss"}return `<span class="pill ${c}">${fp(v)}</span>`}
+function renderMonth(){
+  const ym=$("mMonth").value;if(!ym||ym!==S.ym)return;
+  const st=monthStats(),t=totalOf(st);
+  const row=(o,cls="")=>`<tr class="${cls}"><td class="l">${o.n}</td><td class="n">${o.due}</td><td class="n">${o.ok}</td><td class="n">${o.late}</td><td class="n">${o.miss}</td><td class="n">${o.off}</td>
+    <td class="n">${pill2(o.subRate,"sub")}</td><td class="n">${pill2(o.lateRate,"late")}</td>
+    <td class="n">${fn(o.target)}</td><td class="n">${fn(o.sales)}</td><td class="n">${fp(o.salesRate)}</td><td class="n">${fn(o.cups)}</td><td class="n">${fp(o.cupRate)}</td><td class="n">${fn(o.delivCups)}</td><td class="n">${f1(o.hoursActual)}</td><td class="n">${f1(o.prod)}</td></tr>`;
+  $("mTable").innerHTML=`<thead><tr><th class="l">門市</th><th>應交</th><th>準時</th><th>遲交</th><th>未交</th><th>休假</th><th>繳交率</th><th>遲交率</th><th>月預計業績</th><th>月業績</th><th>達成率</th><th>月杯數</th><th>杯數達成</th><th>外送杯數</th><th>實際工時</th><th>平均產值</th></tr></thead><tbody>${st.map(o=>row(o)).join("")}${row(t,"total")}</tbody>`;
+  const days=monthDays(ym);
+  let h=`<thead><tr><th class="l">門市</th>${days.map(d=>`<th>${+d.slice(8)}<br><span class="wk">${wd(d)}</span></th>`).join("")}</tr></thead><tbody>`;
+  STORES.forEach((n,i)=>{h+=`<tr><td class="l">${n}</td>${days.map(d=>{const k=status(i,d);return `<td><button type="button" class="cell ${ST[k][1]}" data-d="${d}" title="${n} ${md(d)} ${ST[k][0]}">${k==="none"?"":ST[k][0][0]}</button></td>`}).join("")}</tr>`});
+  $("mMatrix").innerHTML=h+"</tbody>";
+  $("mMatrix").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("dDate").value=b.dataset.d;setMode("day")});
+}
+
+/* ---------- schedule ---------- */
+let schedChain=Promise.resolve();
+function renderSched(){
+  const ym=$("sMonth").value;if(!ym||ym!==S.ym)return;
+  const days=monthDays(ym);
+  let h=`<thead><tr><th class="l">門市</th>${days.map(d=>`<th>${+d.slice(8)}<br><span class="wk">${wd(d)}</span></th>`).join("")}<th>休</th></tr></thead><tbody>`;
+  STORES.forEach((n,i)=>{const off=S.off[n]||[];h+=`<tr><td class="l">${n}</td>${days.map(d=>`<td><button type="button" class="cell ${off.includes(d)?"s-off":"s-none"}" data-i="${i}" data-d="${d}" aria-label="${n} ${md(d)}">${off.includes(d)?"休":""}</button></td>`).join("")}<td class="n">${off.length}</td></tr>`});
+  $("sMatrix").innerHTML=h+"</tbody>";
+  $("sMatrix").querySelectorAll("button").forEach(b=>b.onclick=()=>toggleOff(STORES[b.dataset.i],b.dataset.d));
+}
+function toggleOff(n,d){
+  const list=new Set(S.off[n]||[]),turnOn=!list.has(d);turnOn?list.add(d):list.delete(d);
+  S.off={...S.off,[n]:[...list].sort()};renderSched();
+  schedChain=schedChain.then(()=>api({action:"setOff",pw:S.pw,store:n,date:d,off:turnOn})).catch(e=>toast("班表儲存失敗："+e.message));
+}
+
+/* ---------- export ---------- */
+const HEAD=["日期","星期","門市","狀態","預計業績","本日業績","業績達成率","預計杯數","本日杯數","杯數達成率","自外送筆數","自外送杯數","原定工時","實際工時","產值","首次送出","最後修改","本日狀況","Q 品質","S 服務","C 衛生","人員狀況","商圈調查","業績規劃","QSC規劃","人員規劃","商圈規劃"];
+const WID=[11,5,11,7,10,10,10,9,9,10,10,10,9,9,8,12,12,50,30,30,30,30,30,30,20,20,20];
+const r3=v=>v==null||!isFinite(v)?"":Math.round(v*1000)/1000;
+function reportRow(d,i){const r=S.reports[rid(d,i)]||{},k=status(i,d);
+  return [d,wd(d),STORES[i],ST[k][0],r.target??"",r.sales??"",r3(pct(r.sales,r.target)),r.cupTarget??"",r.cups??"",r3(pct(r.cups,r.cupTarget)),r.delivOrders??"",r.delivCups??"",r.hoursPlan??"",r.hoursActual??"",r3(pct(r.cups,r.hoursActual)),fmtTime(r.firstSubmittedAt),fmtTime(r.updatedAt),r.daily||"",r.q||"",r.s||"",r.c||"",r.staff||"",r.area||"",r.planSales||"",r.planQsc||"",r.planStaff||"",r.planArea||""]}
+function sheet(aoa,widths){const ws=XLSX.utils.aoa_to_sheet(aoa);if(widths)ws["!cols"]=widths.map(w=>({wch:w}));return ws}
+function saveWb(wb,name){if(typeof XLSX==="undefined"){toast("Excel 元件沒載入，請重新整理");return}XLSX.writeFile(wb,name)}
+function exportDay(){
+  const d=$("dDate").value,wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,sheet([HEAD,...STORES.map((_,i)=>reportRow(d,i))],WID),"當日日報");
+  saveWb(wb,`EOW_${d}.xlsx`);
+}
+function exportMonth(){
+  const ym=S.ym,days=monthDays(ym),st=monthStats(),t=totalOf(st),wb=XLSX.utils.book_new();
+  const sh=["門市","應交","準時","遲交","未交","休假","繳交率","遲交率","未交率","月預計業績","月業績","業績達成率","月預計杯數","月杯數","杯數達成率","自外送筆數","自外送杯數","原定工時","實際工時","平均產值"];
+  const sr=o=>[o.n,o.due,o.ok,o.late,o.miss,o.off,r3(o.subRate),r3(o.lateRate),r3(o.missRate),o.target,o.sales,r3(o.salesRate),o.cupTarget,o.cups,r3(o.cupRate),o.delivOrders,o.delivCups,o.hoursPlan,o.hoursActual,r3(o.prod)];
+  XLSX.utils.book_append_sheet(wb,sheet([sh,...st.map(sr),sr(t)],[12,6,6,6,6,6,8,8,8,11,11,10,11,9,10,10,10,9,9,9]),"月統計");
+  const rows=[];days.forEach(d=>STORES.forEach((_,i)=>{if(status(i,d)!=="none")rows.push(reportRow(d,i))}));
+  XLSX.utils.book_append_sheet(wb,sheet([HEAD,...rows],WID),"每日明細");
+  XLSX.utils.book_append_sheet(wb,sheet([["門市",...days.map(d=>`${md(d)}(${wd(d)})`)],...STORES.map((n,i)=>[n,...days.map(d=>{const k=status(i,d);return k==="none"?"":ST[k][0]})])],[12,...days.map(()=>9)]),"繳交狀況");
+  saveWb(wb,`EOW_${ym}_月報.xlsx`);
+}
+
+/* ---------- admin login ---------- */
+async function tryLogin(pw,silent){
+  try{await api({action:"login",pw});S.admin=true;S.pw=pw;lsSet("eow-pw",pw,true);
+    $("modeNav").hidden=false;$("who").textContent="後台";S.ym=null;setMode("day");return true}
+  catch(e){if(!silent)$("loginMsg").textContent=e.message;return false}
+}
+
+/* ---------- boot ---------- */
+function init(){
+  $("fStore").innerHTML=STORES.map((n,i)=>`<option value="${i}">${n}</option>`).join("");
+  const hs=/^#s(\d+)$/.exec(location.hash),saved=lsGet("eow-store");
+  $("fStore").value=hs&&STORES[hs[1]-1]?hs[1]-1:(saved??0);
+  const t=todayTW();
+  $("fDate").value=t;$("dDate").value=t;$("mMonth").value=ymOf(t);$("sMonth").value=ymOf(t);
+  legend($("legend1"));legend($("legend2"));
+  $("fStore").onchange=()=>{lsSet("eow-store",$("fStore").value);onFormChange()};
+  $("fDate").onchange=onFormChange;
+  NUMF.forEach(f=>$(f).addEventListener("input",calc));
+  $("form").addEventListener("submit",submitForm);
+  const dayGo=()=>{load(ymOf($("dDate").value));renderDay()};
+  $("dDate").onchange=dayGo;
+  $("dPrev").onclick=()=>{$("dDate").value=addDays($("dDate").value,-1);dayGo()};
+  $("dNext").onclick=()=>{$("dDate").value=addDays($("dDate").value,1);dayGo()};
+  $("mMonth").onchange=()=>load($("mMonth").value);$("sMonth").onchange=()=>load($("sMonth").value);
+  document.querySelectorAll("[data-refresh]").forEach(b=>b.onclick=()=>load(curYm(),true));
+  $("dExport").onclick=exportDay;$("mExport").onclick=exportMonth;
+  document.querySelectorAll("#modeNav button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+  $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginBtn").disabled=true;$("loginMsg").textContent="驗證中…";await tryLogin($("pw").value);$("loginBtn").disabled=false});
+  if(!apiReady()){banner("err","網站還沒接上 Google 試算表：請在 index.html 裡貼上 Apps Script 網址。");}
+  if(location.hash==="#admin"){
+    S.mode="login";["store","day","month","sched"].forEach(k=>$("v-"+k).hidden=true);$("v-login").hidden=false;
+    const pw=lsGet("eow-pw",true);if(pw&&apiReady())tryLogin(pw,true);
+  }else setMode("store");
+}
+init();
+</script>
+</body>
+</html>
